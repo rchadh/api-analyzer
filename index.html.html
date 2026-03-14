@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Transcript Analyzer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f7f4; --surface: #ffffff; --surface2: #f1f0ec; --border: #e2e0da;
+    --accent: #2563eb; --text: #1a1917; --text2: #6b6860; --text3: #9c9a96;
+    --warn-bg: #fffbeb; --warn-border: #fcd34d; --warn-text: #92400e;
+    --danger-bg: #fef2f2; --danger-border: #fca5a5; --danger-text: #991b1b;
+    --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 32px; height: 32px; background: var(--text); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 15px; flex-shrink: 0; }
+  header h1 { font-size: 0.95rem; font-weight: 700; }
+  header p { font-size: 0.68rem; color: var(--text2); margin-top: 1px; }
+  .badge { margin-left: auto; font-family: var(--mono); font-size: 0.58rem; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 2px 8px; letter-spacing: 0.06em; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 24px; flex: 1; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; }
+  .panel-head { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 8px; }
+  .panel-head h2 { font-size: 0.68rem; font-weight: 700; color: var(--text2); letter-spacing: 0.07em; text-transform: uppercase; }
+  .panel-head .cnt { margin-left: auto; font-family: var(--mono); font-size: 0.62rem; color: var(--text3); }
+  textarea { flex: 1; border: none; outline: none; padding: 14px; font-family: var(--mono); font-size: 0.76rem; line-height: 1.7; color: var(--text); background: var(--surface); resize: none; width: 100%; min-height: 460px; }
+  textarea::placeholder { color: var(--text3); }
+  .action-bar { padding: 10px 14px; border-top: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-family: var(--sans); font-size: 0.76rem; font-weight: 600; cursor: pointer; color: var(--text); transition: background 0.15s; white-space: nowrap; }
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--text); color: white; border-color: var(--text); }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .key-input { font-family: var(--mono); font-size: 0.68rem; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); flex: 1; min-width: 180px; outline: none; }
+  .key-input:focus { border-color: var(--accent); }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface2); overflow-x: auto; }
+  .tab { padding: 9px 13px; font-size: 0.68rem; font-weight: 700; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; border-top: none; border-left: none; border-right: none; background: none; white-space: nowrap; font-family: var(--sans); transition: color 0.15s; }
+  .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.on) { color: var(--text); }
+  .out { flex: 1; overflow-y: auto; padding: 14px; font-size: 0.78rem; line-height: 1.6; display: none; min-height: 460px; }
+  .out.on { display: block; }
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 8px; color: var(--text3); text-align: center; font-size: 0.78rem; }
+  .spin-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 14px; }
+  .spin { width: 26px; height: 26px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress { font-size: 0.72rem; color: var(--text2); text-align: center; max-width: 240px; }
+  .sec-title { font-size: 0.63rem; font-weight: 700; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .ep-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; margin-bottom: 9px; }
+  .ep-line { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .method { font-family: var(--mono); font-size: 0.6rem; font-weight: 500; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+  .GET    { background:#eff6ff; color:#1d4ed8; }
+  .POST   { background:#f0fdf4; color:#15803d; }
+  .PUT    { background:#fffbeb; color:#b45309; }
+  .PATCH  { background:#fff7ed; color:#c2410c; }
+  .DELETE { background:#fef2f2; color:#b91c1c; }
+  .ep-path { font-family: var(--mono); font-size: 0.73rem; word-break: break-all; }
+  .ep-desc { font-size: 0.73rem; color: var(--text2); margin: 4px 0 5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font-family: var(--mono); font-size: 0.6rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; color: var(--text2); }
+  .rule { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.76rem; }
+  .rule:last-child { border-bottom: none; }
+  .rule-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text2); flex-shrink: 0; margin-top: 7px; }
+  .flag { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: var(--radius-sm); padding: 9px 11px; margin-bottom: 7px; font-size: 0.76rem; color: var(--warn-text); }
+  pre { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; font-family: var(--mono); font-size: 0.68rem; line-height: 1.65; overflow-x: auto; white-space: pre; color: var(--text); }
+  .copy-btn { float: right; font-size: 0.62rem; padding: 2px 9px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); cursor: pointer; color: var(--text2); font-family: var(--sans); font-weight: 600; margin-bottom: 4px; }
+  .copy-btn:hover { color: var(--text); }
+  .err { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-sm); padding: 12px; color: var(--danger-text); font-size: 0.76rem; line-height: 1.7; }
+  @media (max-width: 768px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡</div>
+  <div>
+    <h1>API Transcript Analyzer</h1>
+    <p>Extract OpenAPI specs &amp; business logic from meeting transcripts</p>
+  </div>
+  <span class="badge">CLAUDE-POWERED</span>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Meeting Transcript</h2>
+      <span class="cnt" id="cc">0 chars</span>
+    </div>
+    <textarea id="ta" placeholder="Paste your meeting transcript here...
+
+Example:
+PM: We need an endpoint to fetch all orders for a customer.
+Dev: Should we filter by status?
+PM: Yes — pending, shipped, delivered. Also by date range.
+Dev: Validation rules for creating orders?
+PM: At least one item per order. Total must be above $10.
+     Max 5 orders per customer per day.
+Dev: What if a product is out of stock?
+PM: Reject the order — no backorders."></textarea>
+    <div class="action-bar">
+      <button class="btn" onclick="clearAll()">Clear</button>
+      <input class="key-input" id="apikey" type="password" placeholder="Anthropic API key  (sk-ant-...)">
+      <button class="btn primary" id="abtn" onclick="analyze()">Analyze →</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab on" onclick="sw('ep',this)">Endpoints</button>
+      <button class="tab" onclick="sw('bl',this)">Business Logic</button>
+      <button class="tab" onclick="sw('am',this)">Ambiguities</button>
+      <button class="tab" onclick="sw('oa',this)">OpenAPI YAML</button>
+    </div>
+    <div class="out on" id="out-ep"><div class="empty"><p>Paste transcript + API key,<br>then click <strong>Analyze</strong></p></div></div>
+    <div class="out" id="out-bl"><div class="empty"><p>Business rules will appear here</p></div></div>
+    <div class="out" id="out-am"><div class="empty"><p>Ambiguities will appear here</p></div></div>
+    <div class="out" id="out-oa"><div class="empty"><p>OpenAPI YAML will appear here</p></div></div>
+  </div>
+</main>
+
+<script>
+const ta = document.getElementById('ta');
+ta.addEventListener('input', () => {
+  document.getElementById('cc').textContent = ta.value.length.toLocaleString() + ' chars';
+});
+
+function sw(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.out').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('out-' + id).classList.add('on');
+}
+
+function clearAll() {
+  ta.value = '';
+  document.getElementById('cc').textContent = '0 chars';
+  resetOutputs('Paste transcript + API key,<br>then click <strong>Analyze</strong>');
+}
+
+function resetOutputs(msg) {
+  ['ep','bl','am','oa'].forEach(k => {
+    document.getElementById('out-' + k).innerHTML = `<div class="empty"><p>${msg}</p></div>`;
+  });
+}
+
+function setLoading(msg) {
+  ['ep','bl','am','oa'].forEach(k => {
+    document.getElementById('out-' + k).innerHTML =
+      `<div class="spin-wrap"><div class="spin"></div><p class="progress">${msg}</p></div>`;
+  });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function callClaude(key, system, userMsg, maxTokens) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: maxTokens,
+      system: system,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(`API ${res.status}: ${e.error?.message || res.statusText}`);
+  }
+  const raw = await res.json();
+  return (raw.content || []).map(b => b.text || '').join('');
+}
+
+function safeParseJSON(text) {
+  const clean = text.replace(/```json|```/g, '').trim();
+  try { return JSON.parse(clean); }
+  catch {
+    const m = clean.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('Could not parse the response as JSON. Please try again.');
+  }
+}
+
+function renderEp(data) {
+  const el = document.getElementById('out-ep');
+  const eps = data.endpoints || [];
+  if (!eps.length) { el.innerHTML = '<div class="empty"><p>No endpoints found</p></div>'; return; }
+  let h = `<div class="sec-title">${eps.length} endpoint${eps.length > 1 ? 's' : ''} found</div>`;
+  eps.forEach(e => {
+    const m = (e.method || 'GET').toUpperCase();
+    const ps = (e.parameters || []).map(p => `<span class="chip">${esc(p.name)}: ${esc(p.type)}</span>`).join('');
+    h += `<div class="ep-card">
+      <div class="ep-line"><span class="method ${m}">${m}</span><span class="ep-path">${esc(e.path)}</span></div>
+      <div class="ep-desc">${esc(e.description || '')}</div>
+      ${ps ? `<div class="chips">${ps}</div>` : ''}
+    </div>`;
+  });
+  el.innerHTML = h;
+}
+
+function renderBl(data) {
+  const el = document.getElementById('out-bl');
+  const rules = data.businessRules || [];
+  if (!rules.length) { el.innerHTML = '<div class="empty"><p>No business rules detected</p></div>'; return; }
+  let h = `<div class="sec-title">${rules.length} rule${rules.length > 1 ? 's' : ''} extracted</div>`;
+  rules.forEach(r => { h += `<div class="rule"><div class="rule-dot"></div><div>${esc(r)}</div></div>`; });
+  el.innerHTML = h;
+}
+
+function renderAm(data) {
+  const el = document.getElementById('out-am');
+  const flags = data.ambiguities || [];
+  if (!flags.length) {
+    el.innerHTML = `<div style="color:#166534;font-size:0.76rem;padding:8px">&#10003; No major ambiguities detected.</div>`;
+    return;
+  }
+  let h = `<div class="sec-title">${flags.length} item${flags.length > 1 ? 's' : ''} need follow-up</div>`;
+  flags.forEach(f => { h += `<div class="flag">${esc(f)}</div>`; });
+  el.innerHTML = h;
+}
+
+function renderOa(yaml) {
+  const el = document.getElementById('out-oa');
+  if (!yaml || !yaml.trim()) { el.innerHTML = '<div class="empty"><p>YAML not generated</p></div>'; return; }
+  el.innerHTML = `<div class="sec-title">OpenAPI 3.0 Specification <button class="copy-btn" id="cb" onclick="copyYaml()">Copy</button></div><pre id="yb">${esc(yaml)}</pre>`;
+}
+
+function copyYaml() {
+  const txt = document.getElementById('yb').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.getElementById('cb');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy', 2000);
+  });
+}
+
+async function analyze() {
+  const txt = ta.value.trim();
+  const key = document.getElementById('apikey').value.trim();
+
+  if (!txt) { ta.focus(); alert('Please paste a meeting transcript first.'); return; }
+  if (!key || !key.startsWith('sk-ant-')) {
+    alert('Please enter a valid Anthropic API key (starts with sk-ant-).\n\nGet yours at: console.anthropic.com');
+    return;
+  }
+
+  const btn = document.getElementById('abtn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+
+  try {
+    // ── CALL 1: Extract endpoints, business rules, ambiguities (JSON only — no YAML) ──
+    setLoading('Step 1 of 2 — Extracting endpoints &amp; business rules...');
+
+    const sys1 = `You are an expert API designer. Analyze the meeting transcript and extract API design information.
+Return ONLY a valid JSON object. No markdown, no code fences, no explanation.
+Use this exact schema:
+{
+  "endpoints": [
+    {
+      "method": "GET|POST|PUT|PATCH|DELETE",
+      "path": "/resource/{id}",
+      "description": "brief description",
+      "parameters": [
+        { "name": "name", "type": "string|integer|boolean|array|object", "in": "path|query|body", "required": true }
+      ]
+    }
+  ],
+  "businessRules": ["one rule per string"],
+  "ambiguities": ["one ambiguity per string"]
+}`;
+
+    const text1 = await callClaude(key, sys1,
+      'Extract API design information from this transcript. Return JSON only:\n\n' + txt,
+      2500
+    );
+
+    const data = safeParseJSON(text1);
+    renderEp(data);
+    renderBl(data);
+    renderAm(data);
+
+    // Show loading only on YAML tab while others are already populated
+    document.getElementById('out-oa').innerHTML =
+      '<div class="spin-wrap"><div class="spin"></div><p class="progress">Step 2 of 2 — Generating OpenAPI YAML...</p></div>';
+
+    // ── CALL 2: Generate YAML separately to avoid truncation ──
+    const sys2 = `You are an expert API designer. Generate a complete, valid OpenAPI 3.0 YAML specification.
+Return ONLY the raw YAML. No markdown code fences, no explanation, no extra text.
+Start your response with exactly: openapi: "3.0.0"`;
+
+    const yamlPrompt = `Generate an OpenAPI 3.0 YAML spec based on these extracted endpoints and rules.
+
+Endpoints (JSON):
+${JSON.stringify(data.endpoints || [], null, 2)}
+
+Business rules:
+${(data.businessRules || []).map((r, i) => `${i + 1}. ${r}`).join('\n')}
+
+Keep the YAML concise — include info, servers, paths, components/schemas. No verbose comments.`;
+
+    const yamlRaw = await callClaude(key, sys2, yamlPrompt, 2500);
+    const yaml = yamlRaw.replace(/```yaml|```/g, '').trim();
+    renderOa(yaml);
+
+  } catch (err) {
+    const msg = `<div class="err">
+      <strong>Error:</strong> ${esc(err.message)}<br><br>
+      Common fixes:<br>
+      &bull; Verify your API key at <strong>console.anthropic.com</strong><br>
+      &bull; Ensure your account has available credits<br>
+      &bull; Try again — transient network errors sometimes occur
+    </div>`;
+    ['ep', 'bl', 'am', 'oa'].forEach(k => {
+      document.getElementById('out-' + k).innerHTML = msg;
+    });
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analyze →';
+}
+</script>
+</body>
+</html>
