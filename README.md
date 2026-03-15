@@ -1,4 +1,4 @@
-# API Design Intelligence
+# API Design Assistant
 
 > **Transform meeting transcripts into production-ready API specifications using Claude AI**
 
