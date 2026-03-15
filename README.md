@@ -278,13 +278,10 @@ const ALLOWED_ORIGIN = 'https://YOUR-USERNAME.github.io';
 ## Roadmap
 
 Ideas for future versions:
+--
 
-- [ ] Connect to Jira — auto-create tickets from ambiguities
-- [ ] Push generated spec directly to Swagger Hub or API gateway
-- [ ] Support multiple transcript uploads per session
-- [ ] Version comparison — diff specs across meeting iterations
-- [ ] Slack / Teams bot integration for in-meeting analysis
-- [ ] Auth layer — restrict access to org members only
+WIP
+
 
 ---
 
