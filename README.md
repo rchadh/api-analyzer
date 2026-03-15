@@ -304,4 +304,3 @@ MIT License — free to use, modify, and distribute.
 
 ---
 
-*Built with Claude AI by Anthropic*
