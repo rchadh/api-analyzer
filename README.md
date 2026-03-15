@@ -6,9 +6,9 @@ Built by **Rahul Chadha** | [GitHub](https://github.com/rchadh) | [Live Demo](ht
 
 ---
 
-## What is Meridian?
+## What it Does?
 
-Meridian is an AI-powered tool that analyzes meeting transcripts between business stakeholders and API designers, and automatically extracts:
+This is an AI-powered tool that analyzes meeting transcripts between business stakeholders and API designers, and automatically extracts:
 
 - **REST API Endpoints** — HTTP methods, paths, and parameters
 - **Business Rules** — validation constraints and domain logic
